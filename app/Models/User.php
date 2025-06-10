@@ -63,4 +63,10 @@ class User extends Authenticatable implements JWTSubject
     public function personaInformation(){
         return $this->hasOne(MntPersonalInformationUserModel::class, 'user_id', 'id');
     }
+    //// la relacion con las tareas
+    public function tareas()
+    {
+        return $this->hasMany(Tarea::class);
+    }
+
 }

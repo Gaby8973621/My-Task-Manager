@@ -101,7 +101,7 @@ class AuthController extends Controller
 
                 'email' => 'required|string|email|max:255|unique:users',
                 'password' => 'required|string|min:8',
-                'repeat_password' => 'required|string|min:8|same:password'
+                'password_confirmation' => 'required|string|min:8|same:password'
             ], [
                 'email.required' => 'El correo es obligatorio.',
                 'email.email' => 'El correo no tiene un formato válido.',
@@ -147,23 +147,22 @@ class AuthController extends Controller
     {
         try {
             $token = JWTAuth::getToken();
-        
+
             if (!$token) {
                 return response()->json([
                     'message' => 'No token provided',
                     'status' => 400
                 ], 400);
             }
-        
+
             // Registrar el logout del usuario (opcional)
             $user = JWTAuth::authenticate($token);
-            $user->update(['is_logged_in' => false]); // Cambia 'is_logged_in' según tu modelo
-        
+            $user->update(['is_logged_in' => false]);
             return response()->json([
                 'message' => 'User logged out successfully',
                 'status' => 200
             ], 200);
-        
+
         } catch (\Tymon\JWTAuth\Exceptions\JWTException $e) {
             return response()->json([
                 'message' => 'Error invalidating token: ' . $e->getMessage(),
