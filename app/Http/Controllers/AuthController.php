@@ -39,7 +39,8 @@ class AuthController extends Controller
         $token = JWTAuth::claims($customClaims)->fromUser($user);
 
         return response()->json([
-            'token' => $token,
+            'access_token' => $token, // 👈 nombre correcto esperado por el frontend
+            'token_type' => 'bearer',
             'role' => $user->getRoleNames()
         ]);
     }

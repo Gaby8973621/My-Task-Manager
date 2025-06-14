@@ -13,11 +13,10 @@ class TareaController extends Controller
     {
         $user = auth()->user();
 
-        // Si es admin, puede ver todas las tareas
-        if ($user->hasRole('Admin')) {
-            $query = Tarea::query(); // todas
+        if ($user->can('ver_todas_las_tareas') || $user->hasRole('Super Admin')) {
+            $query = Tarea::query();
         } else {
-            $query = $user->tareas(); // solo propias
+            $query = $user->tareas();
         }
 
         if ($request->has('completada')) {
@@ -28,44 +27,49 @@ class TareaController extends Controller
             $query->where('titulo', 'like', '%' . $request->buscar . '%');
         }
 
-        $orden = $request->get('orden', 'desc');
-        $query->orderBy('created_at', $orden);
+        $query->orderBy('created_at', $request->get('orden', 'desc'));
 
-        return response()->json(
-            $query->paginate(10)
-        );
+        return response()->json(['data' => $query->get()]); // ✅ Importante para el frontend
     }
+
 
     public function store(Request $request)
     {
+        $user = auth()->user();
+
+        if (!$user->can('crear_tarea') && !$user->hasRole('Super Admin')) {
+            return response()->json(['error' => 'No autorizado'], 403);
+        }
+
         $validated = $request->validate([
             'titulo' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
             'completada' => 'boolean'
         ]);
 
-        $tarea = Auth::user()->tareas()->create($validated);
+        $tarea = $user->tareas()->create($validated);
 
-        return response()->json($tarea, 201);
+        return response()->json($tarea, 201); // ✅ Devuelve el objeto plano con ID
     }
 
     public function show(string $id)
     {
         $tarea = Tarea::findOrFail($id);
+        $user = auth()->user();
 
-        if ($tarea->user_id !== Auth::id() && !auth()->user()->hasRole('Admin')) {
+        if ($tarea->user_id !== $user->id && !$user->can('ver_todas_las_tareas') && !$user->hasRole('Super Admin')) {
             return response()->json(['error' => 'No autorizado'], 403);
         }
 
-        return response()->json($tarea);
+        return response()->json($tarea); // ✅ respuesta directa
     }
 
     public function update(Request $request, string $id)
     {
         $tarea = Tarea::findOrFail($id);
+        $user = auth()->user();
 
-        // Solo el dueño o un admin puede actualizar
-        if ($tarea->user_id !== Auth::id() && !auth()->user()->hasRole('Admin')) {
+        if ($tarea->user_id !== $user->id && !$user->can('editar_tarea') && !$user->hasRole('Super Admin')) {
             return response()->json(['error' => 'No autorizado'], 403);
         }
 
@@ -77,15 +81,15 @@ class TareaController extends Controller
 
         $tarea->update($validated);
 
-        return response()->json($tarea);
+        return response()->json($tarea); // ✅ respuesta directa
     }
 
     public function destroy(string $id)
     {
         $tarea = Tarea::findOrFail($id);
+        $user = auth()->user();
 
-        // Solo el dueño o un admin puede eliminar
-        if ($tarea->user_id !== Auth::id() && !auth()->user()->hasRole('Admin')) {
+        if ($tarea->user_id !== $user->id && !$user->can('eliminar_tarea') && !$user->hasRole('Super Admin')) {
             return response()->json(['error' => 'No autorizado'], 403);
         }
 

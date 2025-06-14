@@ -6,41 +6,58 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 
 class UserSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        // Crear roles si no existen (opcional)
+        // Crear roles
         foreach (['Super Admin', 'Admin', 'User'] as $rol) {
-            Role::firstOrCreate(['name' => $rol]);
+            Role::firstOrCreate(['name' => $rol, 'guard_name' => 'api']);
         }
 
-        // Usuario Super Admin
-        $superAdmin = User::create([
-            'name' => 'Super Admin',
-            'email' => 'gabriela@gmail.com',
-            'password' => Hash::make('Gabi123$')
+        // Asignar permisos al rol Admin
+        $adminRole = Role::findByName('Admin', 'api');
+        $adminRole->givePermissionTo([
+            'ver_todas_las_tareas',
+            'crear_tarea',
+            'editar_tarea',
+            'eliminar_tarea'
         ]);
+
+        // ✅ Asignar permiso al rol User para que pueda crear tareas
+        $userRole = Role::findByName('User', 'api');
+        $userRole->givePermissionTo([
+            'crear_tarea'
+        ]);
+
+        // Crear usuarios con sus roles
+        $superAdmin = User::firstOrCreate(
+            ['email' => 'gabriela@gmail.com'],
+            [
+                'name' => 'Super Admin',
+                'password' => Hash::make('Gabi123$')
+            ]
+        );
         $superAdmin->assignRole('Super Admin');
 
-        // Usuario Admin
-        $admin = User::create([
-            'name' => 'Administrador',
-            'email' => 'stefany@gmail.com',
-            'password' => Hash::make('Tefa123$')
-        ]);
+        $admin = User::firstOrCreate(
+            ['email' => 'stefany@gmail.com'],
+            [
+                'name' => 'Administrador',
+                'password' => Hash::make('Tefa123$')
+            ]
+        );
         $admin->assignRole('Admin');
 
-        // Usuario normal
-        $user = User::create([
-            'name' => 'Usuario',
-            'email' => 'Tefa@gmail.com',
-            'password' => Hash::make('User123$')
-        ]);
+        $user = User::firstOrCreate(
+            ['email' => 'Tefa@gmail.com'],
+            [
+                'name' => 'Usuario',
+                'password' => Hash::make('User123$')
+            ]
+        );
         $user->assignRole('User');
     }
 }
