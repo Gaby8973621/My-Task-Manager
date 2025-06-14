@@ -11,7 +11,7 @@ class TareaFactory extends Factory
         return [
             'titulo' => $this->faker->sentence,
             'descripcion' => $this->faker->paragraph,
-            'completada' => $this->faker->boolean(30), // 30% probabilidad de estar completada
+            'completada' => $this->faker->boolean(30),
         ];
     }
 }

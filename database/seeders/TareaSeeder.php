@@ -10,18 +10,25 @@ class TareaSeeder extends Seeder
 {
     public function run(): void
     {
-        // Asegúrate de tener al menos un usuario
-        $user = User::first();
+        // Obtener solo los usuarios con rol 'User'
+        $usuarios = User::role('User')->get();
 
-        // Si no hay usuarios, detenemos el seeding
-        if (!$user) {
-            $this->command->info('No hay usuarios para asignar tareas.');
+        if ($usuarios->isEmpty()) {
+            $this->command->info('No hay usuarios con el rol User para asignar tareas.');
             return;
         }
 
-        // Crear 5 tareas de ejemplo
-        Tarea::factory()->count(5)->create([
-            'user_id' => $user->id,
-        ]);
+        foreach ($usuarios as $user) {
+            // Crear 5 tareas por usuario
+            $tareas = Tarea::factory()->count(5)->make();
+
+            // Asignar user_id a cada tarea y guardar
+            $tareas->each(function ($tarea) use ($user) {
+                $tarea->user_id = $user->id;
+                $tarea->save();
+            });
+        }
+
+        $this->command->info('Se crearon tareas para usuarios con rol User.');
     }
 }

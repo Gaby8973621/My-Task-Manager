@@ -9,28 +9,28 @@ use Illuminate\Support\Facades\Auth;
 
 class TareaController extends Controller
 {
-    public function index(Request $request) // <- Se inyecta $request correctamente
+    public function index(Request $request)
     {
         $user = auth()->user();
 
-        // Construimos la query base
-        $query = $user->tareas();
+        // Si es admin, puede ver todas las tareas
+        if ($user->hasRole('Admin')) {
+            $query = Tarea::query(); // todas
+        } else {
+            $query = $user->tareas(); // solo propias
+        }
 
-        // Filtro por estado de completada
         if ($request->has('completada')) {
             $query->where('completada', filter_var($request->completada, FILTER_VALIDATE_BOOLEAN));
         }
 
-        // Filtro por búsqueda en el título
         if ($request->filled('buscar')) {
             $query->where('titulo', 'like', '%' . $request->buscar . '%');
         }
 
-        // Orden por fecha
-        $orden = $request->get('orden', 'desc'); // 'asc' o 'desc'
+        $orden = $request->get('orden', 'desc');
         $query->orderBy('created_at', $orden);
 
-        // Paginación: 10 por página por defecto
         return response()->json(
             $query->paginate(10)
         );
@@ -53,7 +53,7 @@ class TareaController extends Controller
     {
         $tarea = Tarea::findOrFail($id);
 
-        if ($tarea->user_id !== Auth::id()) {
+        if ($tarea->user_id !== Auth::id() && !auth()->user()->hasRole('Admin')) {
             return response()->json(['error' => 'No autorizado'], 403);
         }
 
@@ -64,7 +64,8 @@ class TareaController extends Controller
     {
         $tarea = Tarea::findOrFail($id);
 
-        if ($tarea->user_id !== Auth::id()) {
+        // Solo el dueño o un admin puede actualizar
+        if ($tarea->user_id !== Auth::id() && !auth()->user()->hasRole('Admin')) {
             return response()->json(['error' => 'No autorizado'], 403);
         }
 
@@ -83,7 +84,8 @@ class TareaController extends Controller
     {
         $tarea = Tarea::findOrFail($id);
 
-        if ($tarea->user_id !== Auth::id()) {
+        // Solo el dueño o un admin puede eliminar
+        if ($tarea->user_id !== Auth::id() && !auth()->user()->hasRole('Admin')) {
             return response()->json(['error' => 'No autorizado'], 403);
         }
 

@@ -30,6 +30,6 @@ Route::middleware('auth:api')->group(function () {
         return response()->json(['message' => 'Welcome to the admin dashboard']);
     })->middleware('rol:Admin,Super Admin');
 
-    // ✅ Ruta para tareas (correctamente importada y protegida)
+
     Route::apiResource('tareas', TareaController::class);
 });
