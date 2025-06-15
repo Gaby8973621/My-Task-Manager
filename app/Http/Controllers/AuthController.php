@@ -18,17 +18,21 @@ use Tymon\JWTAuth\Exceptions\JWTException;
 
 class AuthController extends Controller
 {
+    // Método para iniciar sesión
     public function login(Request $request)
     {
         $credential = $request->only('email', 'password');
 
+        // Verifica credenciales
         if (!$token = JWTAuth::attempt($credential)) {
             return response()->json(['errors' => 'Credenciales inválidas'], 401);
         }
 
         $user = Auth::user();
+
         $userInformation = MntPersonalInformationUserModel::where('user_id', $user->id)->first();
 
+        //personalizados para el token JWT
         $customClaims = [
             'user_id' => $user->id,
             'email' => $user->email,
@@ -36,15 +40,18 @@ class AuthController extends Controller
             'role' => $user->getRoleNames()
         ];
 
+        // Genera token personalizados
         $token = JWTAuth::claims($customClaims)->fromUser($user);
 
+        // Devuelve token y roles
         return response()->json([
-            'access_token' => $token, // 👈 nombre correcto esperado por el frontend
+            'access_token' => $token,
             'token_type' => 'bearer',
             'role' => $user->getRoleNames()
         ]);
     }
 
+    // Método para refrescar el token JWT
     public function refresh(Request $request)
     {
         try {
@@ -55,8 +62,10 @@ class AuthController extends Controller
             }
 
             try {
+                // Intenta obtener el usuario del token actual
                 $user = JWTAuth::toUser($currentToken);
             } catch (TokenExpiredException $e) {
+                // Si el token expiró, refrescarlo
                 $currentToken = JWTAuth::refresh($currentToken);
                 $user = JWTAuth::toUser($currentToken);
             }
@@ -70,6 +79,7 @@ class AuthController extends Controller
                 'role' => $user->getRoleNames()
             ];
 
+            // Genera un nuevo token
             $newToken = JWTAuth::claims($customClaims)->refresh($currentToken);
 
             return response()->json([
@@ -78,16 +88,20 @@ class AuthController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
+            // Captura errores
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
+    // Método para registrar un nuevo usuario
     public function register(Request $request)
     {
         try {
             DB::beginTransaction();
 
+            // Validación de datos del formulario
             $validator = Validator::make($request->all(), [
+                'name' => 'required|string|max:255',
                 'email' => 'required|string|email|max:255|unique:users',
                 'password' => 'required|string|min:8',
                 'password_confirmation' => 'required|string|min:8|same:password'
@@ -100,12 +114,14 @@ class AuthController extends Controller
             $emailExplode = explode('@', $request->email);
             $name = $emailExplode[0] . Str::random();
 
+            // Crea el usuario
             $user = User::create([
                 'name' => $name,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
             ]);
 
+            // Asigna el rol 'User' por defecto
             $user->assignRole('User');
 
             $userInformation = MntPersonalInformationUserModel::where('user_id', $user->id)->first();
@@ -117,6 +133,7 @@ class AuthController extends Controller
                 'role' => $user->getRoleNames()
             ];
 
+            // Genera token
             $token = JWTAuth::claims($customClaims)->fromUser($user);
 
             DB::commit();
@@ -128,10 +145,12 @@ class AuthController extends Controller
             ], 201);
 
         } catch (\Exception $th) {
+            // Si ocurre un error
             return ApiResponse::error('Error al crear el usuario ' . $th->getMessage(), 500);
         }
     }
 
+    // Método para cerrar sesión
     public function logout()
     {
         try {
@@ -143,7 +162,6 @@ class AuthController extends Controller
                     'status' => 400
                 ], 400);
             }
-
             $user = JWTAuth::authenticate($token);
             $user->update(['is_logged_in' => false]);
 
@@ -153,6 +171,7 @@ class AuthController extends Controller
             ], 200);
 
         } catch (JWTException $e) {
+
             return response()->json([
                 'message' => 'Error invalidando el token: ' . $e->getMessage(),
                 'status' => 500

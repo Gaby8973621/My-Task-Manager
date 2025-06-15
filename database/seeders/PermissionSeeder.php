@@ -15,7 +15,7 @@ class PermissionSeeder extends Seeder
             'create_permission', 'edit_permission', 'delete_permission', 'view_permission',
             'create_user', 'edit_user', 'delete_user', 'view_user',
 
-            // ✅ Permisos de tareas
+            //Permisos de tareas
             'ver_todas_las_tareas',
             'crear_tarea',
             'editar_tarea',

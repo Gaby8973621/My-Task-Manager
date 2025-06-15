@@ -10,7 +10,7 @@ class TareaSeeder extends Seeder
 {
     public function run(): void
     {
-        // Obtener solo los usuarios con rol 'User'
+        // usuarios con rol 'User'
         $usuarios = User::role('User')->get();
 
         if ($usuarios->isEmpty()) {

@@ -26,7 +26,7 @@ class UserSeeder extends Seeder
             'eliminar_tarea'
         ]);
 
-        // ✅ Asignar permiso al rol User para que pueda crear tareas
+        //Asignar permiso al rol User para que pueda crear tarea
         $userRole = Role::findByName('User', 'api');
         $userRole->givePermissionTo([
             'crear_tarea'
